@@ -200,6 +200,7 @@ void trap_init(void)
 	set_trap_gate(11,&segment_not_present);
 	set_trap_gate(12,&stack_segment);
 	set_trap_gate(13,&general_protection);
+	//È±Ò³ÖĞ¶Ï
 	set_trap_gate(14,&page_fault);
 	set_trap_gate(15,&reserved);
 	set_trap_gate(16,&coprocessor_error);

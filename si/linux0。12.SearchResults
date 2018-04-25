@@ -1,0 +1,5 @@
+---- end_code Matches (4 in 4 files) ----
+Exec.c (fs):		(current->end_code = ex.a_text));
+Memory.c (mm):current->start_code + current->end_code)
+Sched.h (include\linux):	unsigned long start_code,end_code,end_data,brk,start_stack;
+Sys.c (kernel):	if (end_data_seg >= current->end_code &&
