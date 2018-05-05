@@ -71,6 +71,7 @@ extern void hd_interrupt(void);
 extern void rd_load(void);
 
 /* This may be used only once, enforced by 'static int callable' */
+// init进程会使用sys call调用到这个函数 做一些初始化设置
 int sys_setup(void * BIOS)
 {
 	static int callable = 1;

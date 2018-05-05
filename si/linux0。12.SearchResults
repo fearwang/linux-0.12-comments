@@ -1,5 +1,9 @@
----- end_code Matches (4 in 4 files) ----
-Exec.c (fs):		(current->end_code = ex.a_text));
+---- start_code Matches (8 in 3 files) ----
+Fork.c (kernel):	p->start_code = new_code_base;
 Memory.c (mm):current->start_code + current->end_code)
+Memory.c (mm):	if (address - current->start_code > TASK_SIZE) { /* 超出进程地址空间 */
+Memory.c (mm):	from_page += ((p->start_code>>20) & 0xffc);/*  */
+Memory.c (mm):	to_page += ((current->start_code>>20) & 0xffc);/*  */
+Memory.c (mm):	if (address - current->start_code > TASK_SIZE) {/*  */
+Memory.c (mm):	tmp = address - current->start_code;/*  */
 Sched.h (include\linux):	unsigned long start_code,end_code,end_data,brk,start_stack;
-Sys.c (kernel):	if (end_data_seg >= current->end_code &&
