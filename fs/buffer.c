@@ -347,7 +347,7 @@ struct buffer_head * breada(int dev,int first, ...)
 
 void buffer_init(long buffer_end)
 {
-	struct buffer_head * h = start_buffer;
+	struct buffer_head * h = start_buffer; /* 内核代码和数据结束的·地址 ?*/
 	void * b;
 	int i;
 	//buffer end=1m时从新设置end为640k
@@ -356,8 +356,8 @@ void buffer_init(long buffer_end)
 	else
 		b = (void *) buffer_end;
 	//需要跳过bios rom和显示缓存，然后将这段buffer以1k大小用链表管理起来
-	while ( (b -= BLOCK_SIZE) >= ((void *) (h+1)) ) {
-		h->b_dev = 0;
+	while ( (b -= BLOCK_SIZE) >= ((void *) (h+1)) ) { /* buffers这段内存的前面是buffer head所占用，用于管理buffer */
+		h->b_dev = 0;    /* 1k当前的1k区域的起始地址和buffer_head占用内存的结束地址之前是否还有足够空间容纳一个bufer_head */
 		h->b_dirt = 0;
 		h->b_count = 0;
 		h->b_lock = 0;
@@ -365,18 +365,18 @@ void buffer_init(long buffer_end)
 		h->b_wait = NULL;
 		h->b_next = NULL;
 		h->b_prev = NULL;
-		h->b_data = (char *) b;
+		h->b_data = (char *) b; /* 指向1k buffer的起始地址 */
 		h->b_prev_free = h-1;
-		h->b_next_free = h+1;
-		h++;
+		h->b_next_free = h+1; 
+		h++; /* 下一个buffer_head的地址 */
 		NR_BUFFERS++;
-		if (b == (void *) 0x100000)
-			b = (void *) 0xA0000;
+		if (b == (void *) 0x100000) /* 跳过bios?  640k-1024k被bios和显存占用*/
+			b = (void *) 0xA0000; /* 指向640k地址处 */
 	}
-	h--;
-	free_list = start_buffer;
-	free_list->b_prev_free = h;
-	h->b_next_free = free_list;
+	h--; /* h指向最后一个有效的buffer head  ，前面的while循环决定最后要-- */
+	free_list = start_buffer; /* free list指向头一个缓冲块 */
+	free_list->b_prev_free = h; /* 第一个buffer_head指向的1k缓冲区在地址上是最后一个，它的prev指向h(其指向地址最小的1k缓冲区)，形成环形链表 */
+	h->b_next_free = free_list; /* 形成环形链表 */
 	for (i=0;i<NR_HASH;i++)
 		hash_table[i]=NULL;
 }	

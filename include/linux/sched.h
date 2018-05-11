@@ -4,32 +4,32 @@
 #define HZ 100
 
 #define NR_TASKS	64
-#define TASK_SIZE	0x04000000
-#define LIBRARY_SIZE	0x00400000
+#define TASK_SIZE	0x04000000/*  */
+#define LIBRARY_SIZE	0x00400000  /*  */
 
-#if (TASK_SIZE & 0x3fffff)
+#if (TASK_SIZE & 0x3fffff)/*  */
 #error "TASK_SIZE must be multiple of 4M"
 #endif
 
-#if (LIBRARY_SIZE & 0x3fffff)
+#if (LIBRARY_SIZE & 0x3fffff)/*  */
 #error "LIBRARY_SIZE must be a multiple of 4M"
 #endif
 
-#if (LIBRARY_SIZE >= (TASK_SIZE/2))
+#if (LIBRARY_SIZE >= (TASK_SIZE/2))/*  */
 #error "LIBRARY_SIZE too damn big!"
 #endif
 
-#if (((TASK_SIZE>>16)*NR_TASKS) != 0x10000)
+#if (((TASK_SIZE>>16)*NR_TASKS) != 0x10000)/*  */
 #error "TASK_SIZE*NR_TASKS must be 4GB"
 #endif
 
-#define LIBRARY_OFFSET (TASK_SIZE - LIBRARY_SIZE)
+#define LIBRARY_OFFSET (TASK_SIZE - LIBRARY_SIZE)/* 进程逻辑地址空间中 动态库的位置 */
 
-#define CT_TO_SECS(x)	((x) / HZ)
-#define CT_TO_USECS(x)	(((x) % HZ) * 1000000/HZ)
+#define CT_TO_SECS(x)	((x) / HZ)/* 滴答数转换成s加us */
+#define CT_TO_USECS(x)	(((x) % HZ) * 1000000/HZ)/*  */
 
-#define FIRST_TASK task[0]
-#define LAST_TASK task[NR_TASKS-1]
+#define FIRST_TASK task[0]/* 任务数组第一项 */
+#define LAST_TASK task[NR_TASKS-1]/* 任务数组最后一项 */
 
 #include <linux/head.h>
 #include <linux/fs.h>
@@ -39,21 +39,23 @@
 #include <sys/resource.h>
 #include <signal.h>
 
-#if (NR_OPEN > 32)
+#if (NR_OPEN > 32)/*  */
 #error "Currently the close-on-exec-flags and select masks are in one long, max 32 files/proc"
 #endif
 
-#define TASK_RUNNING		0
+#define TASK_RUNNING		0/*  */
 #define TASK_INTERRUPTIBLE	1
 #define TASK_UNINTERRUPTIBLE	2
 #define TASK_ZOMBIE		3
 #define TASK_STOPPED		4
 
 #ifndef NULL
-#define NULL ((void *) 0)
+#define NULL ((void *) 0)/*  */
 #endif
 
+//复制进程的页目录表
 extern int copy_page_tables(unsigned long from, unsigned long to, long size);
+//释放页表指定的内存块及页表本身
 extern int free_page_tables(unsigned long from, unsigned long size);
 
 extern void sched_init(void);
@@ -62,9 +64,9 @@ extern void trap_init(void);
 extern void panic(const char * str);
 extern int tty_write(unsigned minor,char * buf,int count);
 
-typedef int (*fn_ptr)();
+typedef int (*fn_ptr)();/*  */
 
-struct i387_struct {
+struct i387_struct {/* 数学协处理器使用 */
 	long	cwd;
 	long	swd;
 	long	twd;
@@ -75,7 +77,7 @@ struct i387_struct {
 	long	st_space[20];	/* 8*10 bytes for each FP-reg = 80 bytes */
 };
 
-struct tss_struct {
+struct tss_struct {/* tss结构 */
 	long	back_link;	/* 16 high bits zero */
 	long	esp0;
 	long	ss0;		/* 16 high bits zero */
@@ -102,7 +104,7 @@ struct tss_struct {
 	struct i387_struct i387;
 };
 
-struct task_struct {
+struct task_struct {/* 重磅 */
 /* these are hardcoded - don't touch */
 	long state;	/* -1 unrunnable, 0 runnable, >0 stopped */
 	long counter;
@@ -203,11 +205,11 @@ extern int in_group_p(gid_t grp);
  */
 #define FIRST_TSS_ENTRY 4
 #define FIRST_LDT_ENTRY (FIRST_TSS_ENTRY+1)
-#define _TSS(n) ((((unsigned long) n)<<4)+(FIRST_TSS_ENTRY<<3))
+#define _TSS(n) ((((unsigned long) n)<<4)+(FIRST_TSS_ENTRY<<3))  /* 计算偏移量  字节为单位 */
 #define _LDT(n) ((((unsigned long) n)<<4)+(FIRST_LDT_ENTRY<<3))
 #define ltr(n) __asm__("ltr %%ax"::"a" (_TSS(n)))
 #define lldt(n) __asm__("lldt %%ax"::"a" (_LDT(n)))
-#define str(n) \
+#define str(n) \               /* 取当前任务号    任务号和进程pid不同 */
 __asm__("str %%ax\n\t" \
 	"subl %2,%%eax\n\t" \
 	"shrl $4,%%eax" \
@@ -219,13 +221,15 @@ __asm__("str %%ax\n\t" \
  * This also clears the TS-flag if the task we switched to has used
  * tha math co-processor latest.
  */
-#define switch_to(n) {\
+#define switch_to(n) {\             /* 切换到任务号n */
 struct {long a,b;} __tmp; \
-__asm__("cmpl %%ecx,_current\n\t" \
-	"je 1f\n\t" \
-	"movw %%dx,%1\n\t" \
-	"xchgl %%ecx,_current\n\t" \
-	"ljmp %0\n\t" \
+__asm__("cmpl %%ecx,_current\n\t" \      /* 目标任务是当前任务? */
+	"je 1f\n\t" \				/* 直接退出 不切换 */
+	"movw %%dx,%1\n\t" \         /* 目标任务的tss段选择符 存入__tmp.b */
+	"xchgl %%ecx,_current\n\t" \  /* current=task[n]  ecx=悲切换出去的任务 */
+	"ljmp %0\n\t" \					/* 造成任务切换 */
+
+
 	"cmpl %%ecx,_last_task_used_math\n\t" \
 	"jne 1f\n\t" \
 	"clts\n" \
@@ -259,6 +263,7 @@ __asm__("movw %%dx,%0\n\t" \
 	  "d" (limit) \
 	:"dx")
 
+//设置位于addr处的段描述符的base和limit字段
 #define set_base(ldt,base) _set_base( ((char *)&(ldt)) , base )
 #define set_limit(ldt,limit) _set_limit( ((char *)&(ldt)) , (limit-1)>>12 )
 

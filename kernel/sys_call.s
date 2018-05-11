@@ -33,20 +33,23 @@
 
 SIG_CHLD	= 17
 
-EAX		= 0x00
+// ret_from_system_call时，各个寄存器在堆栈中的偏移值
+EAX		= 0x00	// 系统调用返回值
 EBX		= 0x04
 ECX		= 0x08
 EDX		= 0x0C
-ORIG_EAX	= 0x10
+ORIG_EAX	= 0x10  //如果不是系统调用  是其他中断 该值是-1   否则是调用号
 FS		= 0x14
 ES		= 0x18
 DS		= 0x1C
+// cpu自动入栈
 EIP		= 0x20
 CS		= 0x24
 EFLAGS		= 0x28
 OLDESP		= 0x2C
 OLDSS		= 0x30
 
+// task struct中各个变量的offset
 state	= 0		# these are offsets into the task-struct.
 counter	= 4
 priority = 8
@@ -54,15 +57,16 @@ signal	= 12
 sigaction = 16		# MUST be 16 (=len of sigaction)
 blocked = (33*16)
 
+// sigaction成员变量的offset
 # offsets within sigaction
 sa_handler = 0
 sa_mask = 4
 sa_flags = 8
 sa_restorer = 12
 
-nr_system_calls = 82
-
-ENOSYS = 38
+nr_system_calls = 82 // 一共82个系统调用
+  
+ENOSYS = 38  //系统调用号 出错码
 
 /*
  * Ok, I get parallel printer interrupts while using the floppy for some
@@ -73,19 +77,20 @@ ENOSYS = 38
 .globl _device_not_available, _coprocessor_error
 
 .align 2
-bad_sys_call:
+bad_sys_call:          //系统调用号出错时 返回-38
 	pushl $-ENOSYS
 	jmp ret_from_sys_call
 .align 2
 reschedule:
-	pushl $ret_from_sys_call
+	pushl $ret_from_sys_call  //schedule返回时 从$ret_from_sys_call继续执行
 	jmp _schedule
-.align 2
-_system_call:
+	
+.align 2 //系统调用总入口
+_system_call:   //cpu自动入栈 ss esp eflags  cs eip
 	push %ds
 	push %es
 	push %fs
-	pushl %eax		# save the orig_eax
+	pushl %eax		# save the orig_eax  即调用号
 	pushl %edx		
 	pushl %ecx		# push %ebx,%ecx,%edx as parameters
 	pushl %ebx		# to the system call
@@ -94,38 +99,48 @@ _system_call:
 	mov %dx,%es
 	movl $0x17,%edx		# fs points to local data space
 	mov %dx,%fs
-	cmpl _NR_syscalls,%eax
+	cmpl _NR_syscalls,%eax   //调用号错误
 	jae bad_sys_call
 	call _sys_call_table(,%eax,4)
-	pushl %eax
+	pushl %eax		//系统调用返回值入栈
 2:
+	//当进程不是可运行状态或者时间片用完了  就执行重新调度
 	movl _current,%eax
 	cmpl $0,state(%eax)		# state
 	jne reschedule
 	cmpl $0,counter(%eax)		# counter
-	je reschedule
+	je reschedule 
+
+	//reschedule返回后将从这里继续执行
+
+
+	// ret from syscall的时候处理信号  处理syscall 时钟中断也会来到这里
 ret_from_sys_call:
-	movl _current,%eax
-	cmpl _task,%eax			# task[0] cannot have signals
+	movl _current,%eax		//eax保存当前任务号
+	cmpl _task,%eax			# task[0] cannot have signals  任务0 则直接返回 不处理信号
 	je 3f
-	cmpw $0x0f,CS(%esp)		# was old code segment supervisor ?
+	cmpw $0x0f,CS(%esp)		# was old code segment supervisor ? 是是不是从用户态走到这里  如果不是则是中断处理函数走到这里，直接退出 不处理信号
 	jne 3f
 	cmpw $0x17,OLDSS(%esp)		# was stack segment = 0x17 ?
 	jne 3f
-	movl signal(%eax),%ebx
-	movl blocked(%eax),%ecx
-	notl %ecx
-	andl %ebx,%ecx
-	bsfl %ecx,%ecx
-	je 3f
-	btrl %ecx,%ebx
-	movl %ebx,signal(%eax)
-	incl %ecx
-	pushl %ecx
-	call _do_signal
-	popl %ecx
-	testl %eax, %eax
+	movl signal(%eax),%ebx		//取得任务的信号位图
+	movl blocked(%eax),%ecx		//取屏蔽位图
+	notl %ecx			//屏蔽位图取反
+	andl %ebx,%ecx			//&获得允许的位图
+	bsfl %ecx,%ecx			//从低位开始扫描 看看是否有1的位
+				//若有 则cx保留该位的偏移值
+	je 3f				//若没有则退出
+	btrl %ecx,%ebx			// 复位扫描到为1的bit
+	movl %ebx,signal(%eax)			//更新任务的信号位图
+	incl %ecx			//信号值调整为从1开始的值
+	pushl %ecx			//信号值入栈
+	call _do_signal			//调用信号处理函数
+	popl %ecx		//弹出入栈的信号值
+	testl %eax, %eax		//判断do_signal的返回值 不为0则跳转到2b  从2执行下来还会判断信号 
+					//需要其他处理或任务调度
 	jne 2b		# see if we need to switch tasks, or do more signals
+
+	//从系统调用返回 
 3:	popl %eax
 	popl %ebx
 	popl %ecx
@@ -134,24 +149,24 @@ ret_from_sys_call:
 	pop %fs
 	pop %es
 	pop %ds
-	iret
+	iret  //自动弹出cpu入栈的寄存器 
 
-.align 2
+.align 2 //协处理器出错中断处理函数
 _coprocessor_error:
 	push %ds
 	push %es
 	push %fs
-	pushl $-1		# fill in -1 for orig_eax
+	pushl $-1		# fill in -1 for orig_eax  表明不是系统调用
 	pushl %edx
 	pushl %ecx
 	pushl %ebx
 	pushl %eax
-	movl $0x10,%eax
-	mov %ax,%ds
+	movl $0x10,%eax  // ds es指向内核数据段
+	mov %ax,%ds   
 	mov %ax,%es
-	movl $0x17,%eax
-	mov %ax,%fs
-	pushl $ret_from_sys_call
+	movl $0x17,%eax  
+	mov %ax,%fs // fs指向用户态数据段
+	pushl $ret_from_sys_call  //返回地址入栈
 	jmp _math_error
 
 .align 2
@@ -162,7 +177,7 @@ _device_not_available:
 	pushl $-1		# fill in -1 for orig_eax
 	pushl %edx
 	pushl %ecx
-	pushl %ebx
+	pushl %ebx		
 	pushl %eax
 	movl $0x10,%eax
 	mov %ax,%ds
@@ -186,6 +201,7 @@ _device_not_available:
 	ret
 
 .align 2
+//时钟中断处理函数
 _timer_interrupt:
 	push %ds		# save ds,es and put kernel data space
 	push %es		# into them. %fs is used by _system_call
@@ -193,35 +209,38 @@ _timer_interrupt:
 	pushl $-1		# fill in -1 for orig_eax
 	pushl %edx		# we save %eax,%ecx,%edx as gcc doesn't
 	pushl %ecx		# save those across function calls. %ebx
-	pushl %ebx		# is saved as we use that in ret_sys_call
+	pushl %ebx		# is saved as we use that in ret_sys_call  保存这些寄存器是我们自己要做的 gcc不帮我们做  后面ret_sys_call会使用这些寄存器
 	pushl %eax
 	movl $0x10,%eax
 	mov %ax,%ds
 	mov %ax,%es
 	movl $0x17,%eax
-	mov %ax,%fs
-	incl _jiffies
-	movb $0x20,%al		# EOI to interrupt controller #1
+	mov %ax,%fs       // 设置好段寄存器  es ds内核段   fs->任务的局部数据段
+	incl _jiffies			// 每个时钟中断中增加_jiffies
+	movb $0x20,%al		# EOI to interrupt controller #1   操作8295a 结束中断
 	outb %al,$0x20
-	movl CS(%esp),%eax
+	
+	movl CS(%esp),%eax // 用当前特权级作为参数调用do timer  即执行系统调用的代码段的cpl 用于执行任务切换 计时等
 	andl $3,%eax		# %eax is CPL (0 or 3, 0=supervisor)
 	pushl %eax
 	call _do_timer		# 'do_timer(long CPL)' does everything from
-	addl $4,%esp		# task switching to accounting ...
-	jmp ret_from_sys_call
+	addl $4,%esp		# task switching to accounting ...  //弹出do timer入参
+	jmp ret_from_sys_call   # 所有处理逻辑都保证调用ret_from_sys_call的时候 堆栈上的布局是一致的
 
+
+//sys_execve系统调用
 .align 2
 _sys_execve:
-	lea EIP(%esp),%eax
-	pushl %eax
+	lea EIP(%esp),%eax // eax指向堆栈中保存调用系统调用的代码地址eip指针处
+	pushl %eax		//指针入栈 作为参数
 	call _do_execve
-	addl $4,%esp
+	addl $4,%esp    //参数出栈
 	ret
 
 .align 2
 _sys_fork:
-	call _find_empty_process
-	testl %eax,%eax
+	call _find_empty_process //为新进程取得进程号
+	testl %eax,%eax		//eax中返回进程号 若返回负数则退出
 	js 1f
 	push %gs
 	pushl %esi
@@ -229,7 +248,7 @@ _sys_fork:
 	pushl %ebp
 	pushl %eax
 	call _copy_process
-	addl $20,%esp
+	addl $20,%esp //弹出入栈的参数
 1:	ret
 
 _hd_interrupt:

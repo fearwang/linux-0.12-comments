@@ -160,32 +160,32 @@ void main(void)		/* This really IS void, no error here. */
 //内存初始化，搞得就是buddy管理的那部分，
 //设置mem_map数组，除了主存区，其他部分全部设置为used
 	mem_init(main_memory_start,memory_end);
-//设置大部分异常的处理函数，其他特殊的由具体硬件初始化时设置
-	trap_init();
+
+	trap_init();/*设置大部分异常的处理函数，其他特殊的由具体硬件初始化时设置*/
 ////块设备初始化，IO请求数组初始化
-	blk_dev_init();
+	blk_dev_init();/*  */
 //字符设备初始化 目前为空
-	chr_dev_init();
+	chr_dev_init();/*  */
 
 
-	tty_init();//待分析
+	tty_init();/*待分析*/
 
 	//初始化开机时间保存到startup_time
-	time_init();
+	time_init();/*  */
 	//任务相关的初始化，设置ldt，tss等
-	sched_init();
-	//将高速缓存按1k大小用链表管理起来
-	buffer_init(buffer_memory_end);
+	sched_init();/*  */
+	//将高速缓存按1k大小用链表管理起来  给块设备使用的
+	buffer_init(buffer_memory_end);/*  */
 	//设置io request处理函数，设置hd中断处理函数
-	hd_init();
-	//软驱初始化和hd一样
-	floppy_init();
+	hd_init();/*  */
+	//软驱初始化和hd一样 设置IO REQUEST的处理函数  设置软驱中断处理
+	floppy_init();/*  */
 	//初始化完成 可以打开中断了，我们已经设置了所有 中断处理函数
-	sti();
+	sti();/*  */
 	//内核堆栈中设置调用栈，然后iret返回到用户态
 	//到目前为止初始化代码使用的都是user_stack数组的栈而不是task struct页中的内核堆栈
 	//这里回到用户态后再回到内核态时就会使用内核态堆栈
-	move_to_user_mode();
+	move_to_user_mode();/*  */
 
 
 	//注意此时是在用户态 执行fork生成init 1号进程
@@ -226,7 +226,7 @@ void init(void)
 {
 	int pid,i;
 
-	//待分析，读取硬盘参数，包括分区表信息
+	//待分析，读取硬盘参数，包括分区表信息  系统调用sys_setup
 	setup((void *) &drive_info);
 
 	//打开tty1

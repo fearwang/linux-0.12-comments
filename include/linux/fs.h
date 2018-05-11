@@ -70,6 +70,7 @@ void buffer_init(long buffer_end);
 
 typedef char buffer_block[BLOCK_SIZE];
 
+//
 struct buffer_head {
 	char * b_data;			/* pointer to data block (1024 bytes) */
 	unsigned long b_blocknr;	/* block number */

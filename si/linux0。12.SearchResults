@@ -1,9 +1,16 @@
----- start_code Matches (8 in 3 files) ----
-Fork.c (kernel):	p->start_code = new_code_base;
-Memory.c (mm):current->start_code + current->end_code)
-Memory.c (mm):	if (address - current->start_code > TASK_SIZE) { /* 超出进程地址空间 */
-Memory.c (mm):	from_page += ((p->start_code>>20) & 0xffc);/*  */
-Memory.c (mm):	to_page += ((current->start_code>>20) & 0xffc);/*  */
-Memory.c (mm):	if (address - current->start_code > TASK_SIZE) {/*  */
-Memory.c (mm):	tmp = address - current->start_code;/*  */
-Sched.h (include\linux):	unsigned long start_code,end_code,end_data,brk,start_stack;
+---- sleep_on Matches (15 in 8 files) ----
+Buffer.c (fs):		sleep_on(&bh->b_wait);
+Buffer.c (fs):		sleep_on(&buffer_wait);
+Floppy.c (kernel\blk_drv):		sleep_on(&wait_on_floppy_select);
+Inode.c (fs):		sleep_on(&inode->i_wait);
+Inode.c (fs):		sleep_on(&inode->i_wait);
+Ll_rw_blk.c (kernel\blk_drv):		sleep_on(&bh->b_wait);
+Ll_rw_blk.c (kernel\blk_drv):		sleep_on(&wait_for_request);
+Ll_rw_blk.c (kernel\blk_drv):		sleep_on(&wait_for_request);
+Pipe.c (fs):			sleep_on(& PIPE_WRITE_WAIT(*inode));
+Sched.c (kernel): * (sleep_on, wakeup, schedule etc) as well as a number of simple system
+Sched.c (kernel):void sleep_on(struct task_struct **p)
+Sched.c (kernel):		sleep_on(nr+wait_motor);
+Sched.h (include\linux):extern void sleep_on(struct task_struct ** p);
+Super.c (fs):		sleep_on(&(sb->s_wait));
+Super.c (fs):		sleep_on(&(sb->s_wait));
