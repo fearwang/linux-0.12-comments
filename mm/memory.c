@@ -96,7 +96,7 @@ int free_page_tables(unsigned long from  /* 线性地址 */,unsigned long size /* 释
 		for (nr=0 ; nr<1024 ; nr++) { /* 处理1204项 页表项 */
 			if (*pg_table) {/* 页表项有内容 不为0 */
 				if (1 & *pg_table) /* p位=1 ，需要free */
-					free_page(0xfffff000 & *pg_table); /* 入参是页面的物理base地址 */
+					free_page(0xfffff000 & *pg_table); /* 入参是页面的物理base地址  此函数就是将page的引用-- */
 				else
 					//此时页表项中保存的是什么? 像是swap的索引 而不是对应的物理页面的base地址
 					swap_free(*pg_table >> 1); /* 页表项不为0，但是p=0，此页可能被swap 需要从swap中free */

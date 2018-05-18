@@ -1,4 +1,5 @@
----- ERESTARTNOINTR Matches (3 in 2 files) ----
-Errno.h (include):#define ERESTARTNOINTR	513
-Signal.c (kernel):    return -ERESTARTNOINTR;		/* handle the signal, and come back */
-Signal.c (kernel):	    ((eax == -ERESTARTSYS) || (eax == -ERESTARTNOINTR))) {/*  */
+---- release Matches (4 in 2 files) ----
+Exit.c (kernel):void release(struct task_struct * p)
+Exit.c (kernel):	panic("trying to release non-existent task");
+Exit.c (kernel):				release(p);
+Utsname.h (include\sys):	char release[9];
