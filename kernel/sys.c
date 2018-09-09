@@ -24,37 +24,37 @@
 struct timezone sys_tz = { 0, 0};
 
 extern int session_of_pgrp(int pgrp);
-
+/* 返回时间 未实现 */
 int sys_ftime()
 {
 	return -ENOSYS;
 }
-
+/*  */
 int sys_break()
 {
 	return -ENOSYS;
 }
-
+/* 对子进程进行调试 */
 int sys_ptrace()
 {
 	return -ENOSYS;
 }
-
+/*  */
 int sys_stty()
 {
 	return -ENOSYS;
 }
-
+/*  */
 int sys_gtty()
 {
 	return -ENOSYS;
 }
-
+/* 修改文件名 */
 int sys_rename()
 {
 	return -ENOSYS;
 }
-
+/*  */
 int sys_prof()
 {
 	return -ENOSYS;
@@ -71,23 +71,25 @@ int sys_prof()
  * 100% compatible with BSD.  A program which uses just setgid() will be
  * 100% compatible with POSIX w/ Saved ID's. 
  */
+
+/*  */
 int sys_setregid(int rgid, int egid)
 {
-	if (rgid>0) {
+	if (rgid>0) {/*  */
 		if ((current->gid == rgid) || 
-		    suser())
+		    suser())/*  */
 			current->gid = rgid;
-		else
+		else/*  */
 			return(-EPERM);
 	}
 	if (egid>0) {
 		if ((current->gid == egid) ||
 		    (current->egid == egid) ||
 		    suser()) {
-			current->egid = egid;
-			current->sgid = egid;
+			current->egid = egid;/*  */
+			current->sgid = egid;/*  */
 		} else
-			return(-EPERM);
+			return(-EPERM);/*  */
 	}
 	return 0;
 }
@@ -95,13 +97,13 @@ int sys_setregid(int rgid, int egid)
 /*
  * setgid() is implemeneted like SysV w/ SAVED_IDS 
  */
-int sys_setgid(int gid)
+int sys_setgid(int gid)/*  */
 {
-	if (suser())
-		current->gid = current->egid = current->sgid = gid;
-	else if ((gid == current->gid) || (gid == current->sgid))
+	if (suser())/*  */
+		current->gid = current->egid = current->sgid = gid;/*  */
+	else if ((gid == current->gid) || (gid == current->sgid))/*  */
 		current->egid = gid;
-	else
+	else/*  */
 		return -EPERM;
 	return 0;
 }
@@ -131,14 +133,14 @@ int sys_ulimit()
 	return -ENOSYS;
 }
 
-int sys_time(long * tloc)
+int sys_time(long * tloc)/*  */
 {
 	int i;
 
 	i = CURRENT_TIME;
-	if (tloc) {
-		verify_area(tloc,4);
-		put_fs_long(i,(unsigned long *)tloc);
+	if (tloc) {/*  */
+		verify_area(tloc,4);/*  */
+		put_fs_long(i,(unsigned long *)tloc);/*  */
 	}
 	return i;
 }
@@ -156,26 +158,26 @@ int sys_time(long * tloc)
  * 100% compatible with BSD.  A program which uses just setuid() will be
  * 100% compatible with POSIX w/ Saved ID's. 
  */
-int sys_setreuid(int ruid, int euid)
+int sys_setreuid(int ruid, int euid)/*  */
 {
-	int old_ruid = current->uid;
+	int old_ruid = current->uid;/*  */
 	
 	if (ruid>0) {
-		if ((current->euid==ruid) ||
-                    (old_ruid == ruid) ||
+		if ((current->euid==ruid) ||/*  */
+                    (old_ruid == ruid) ||/*  */
 		    suser())
-			current->uid = ruid;
+			current->uid = ruid;/*  */
 		else
-			return(-EPERM);
+			return(-EPERM);/*  */
 	}
-	if (euid>0) {
-		if ((old_ruid == euid) ||
-                    (current->euid == euid) ||
+	if (euid>0) {/*  */
+		if ((old_ruid == euid) ||/*  */
+                    (current->euid == euid) ||/*  */
 		    suser()) {
-			current->euid = euid;
-			current->suid = euid;
+			current->euid = euid;/*  */
+			current->suid = euid;/*  */
 		} else {
-			current->uid = old_ruid;
+			current->uid = old_ruid;/*  */
 			return(-EPERM);
 		}
 	}
@@ -193,27 +195,27 @@ int sys_setreuid(int ruid, int euid)
  * will allow a root program to temporarily drop privileges and be able to
  * regain them by swapping the real and effective uid.  
  */
-int sys_setuid(int uid)
+int sys_setuid(int uid)/*  */
 {
 	if (suser())
-		current->uid = current->euid = current->suid = uid;
-	else if ((uid == current->uid) || (uid == current->suid))
+		current->uid = current->euid = current->suid = uid;/*  */
+	else if ((uid == current->uid) || (uid == current->suid))/*  */
 		current->euid = uid;
-	else
+	else/*  */
 		return -EPERM;
 	return(0);
 }
 
-int sys_stime(long * tptr)
+int sys_stime(long * tptr)/*  */
 {
 	if (!suser())
 		return -EPERM;
-	startup_time = get_fs_long((unsigned long *)tptr) - jiffies/HZ;
+	startup_time = get_fs_long((unsigned long *)tptr) - jiffies/HZ;/*  */
 	jiffies_offset = 0;
 	return 0;
 }
 
-int sys_times(struct tms * tbuf)
+int sys_times(struct tms * tbuf)/*  */
 {
 	if (tbuf) {
 		verify_area(tbuf,sizeof *tbuf);
@@ -225,10 +227,11 @@ int sys_times(struct tms * tbuf)
 	return jiffies;
 }
 
-int sys_brk(unsigned long end_data_seg)
+//扩展数据段结尾值
+int sys_brk(unsigned long end_data_seg)/*  */
 {
 	if (end_data_seg >= current->end_code &&
-	    end_data_seg < current->start_stack - 16384)
+	    end_data_seg < current->start_stack - 16384)/* 检查参数有效性 */
 		current->brk = end_data_seg;
 	return current->brk;
 }
@@ -242,7 +245,7 @@ int sys_brk(unsigned long end_data_seg)
  * only important on a multi-user system anyway, to make sure one user
  * can't send a signal to a process owned by another.  -TYT, 12/12/91
  */
-int sys_setpgid(int pid, int pgid)
+int sys_setpgid(int pid, int pgid)/* 设定指定进程的组id */
 {
 	int i; 
 
@@ -268,15 +271,15 @@ int sys_setpgid(int pid, int pgid)
 	return -ESRCH;
 }
 
-int sys_getpgrp(void)
+int sys_getpgrp(void)/*  */
 {
-	return current->pgrp;
+	return current->pgrp;/*  */
 }
 
-int sys_setsid(void)
+int sys_setsid(void)/*  */
 {
 	if (current->leader && !suser())
-		return -EPERM;
+		return -EPERM;/*  */
 	current->leader = 1;
 	current->session = current->pgrp = current->pid;
 	current->tty = -1;
@@ -286,7 +289,7 @@ int sys_setsid(void)
 /*
  * Supplementary group ID's
  */
-int sys_getgroups(int gidsetsize, gid_t *grouplist)
+int sys_getgroups(int gidsetsize, gid_t *grouplist)/*  */
 {
 	int	i;
 
@@ -304,7 +307,7 @@ int sys_getgroups(int gidsetsize, gid_t *grouplist)
 	return(i);
 }
 
-int sys_setgroups(int gidsetsize, gid_t *grouplist)
+int sys_setgroups(int gidsetsize, gid_t *grouplist)/*  */
 {
 	int	i;
 
@@ -320,7 +323,7 @@ int sys_setgroups(int gidsetsize, gid_t *grouplist)
 	return 0;
 }
 
-int in_group_p(gid_t grp)
+int in_group_p(gid_t grp)/*  */
 {
 	int	i;
 
@@ -336,11 +339,11 @@ int in_group_p(gid_t grp)
 	return 0;
 }
 
-static struct utsname thisname = {
+static struct utsname thisname = {/*  */
 	UTS_SYSNAME, UTS_NODENAME, UTS_RELEASE, UTS_VERSION, UTS_MACHINE
 };
 
-int sys_uname(struct utsname * name)
+int sys_uname(struct utsname * name)/*  */
 {
 	int i;
 
@@ -354,7 +357,7 @@ int sys_uname(struct utsname * name)
 /*
  * Only sethostname; gethostname can be implemented by calling uname()
  */
-int sys_sethostname(char *name, int len)
+int sys_sethostname(char *name, int len)/*  */
 {
 	int	i;
 	
@@ -372,7 +375,7 @@ int sys_sethostname(char *name, int len)
 	return 0;
 }
 
-int sys_getrlimit(int resource, struct rlimit *rlim)
+int sys_getrlimit(int resource, struct rlimit *rlim)/*  */
 {
 	if (resource >= RLIM_NLIMITS)
 		return -EINVAL;
@@ -384,7 +387,7 @@ int sys_getrlimit(int resource, struct rlimit *rlim)
 	return 0;	
 }
 
-int sys_setrlimit(int resource, struct rlimit *rlim)
+int sys_setrlimit(int resource, struct rlimit *rlim)/*  */
 {
 	struct rlimit new, *old;
 
@@ -409,7 +412,7 @@ int sys_setrlimit(int resource, struct rlimit *rlim)
  * a lot simpler!  (Which we're not doing right now because we're not
  * measuring them yet).
  */
-int sys_getrusage(int who, struct rusage *ru)
+int sys_getrusage(int who, struct rusage *ru)/*  */
 {
 	struct rusage r;
 	unsigned long	*lp, *lpend, *dest;
@@ -437,7 +440,7 @@ int sys_getrusage(int who, struct rusage *ru)
 	return(0);
 }
 
-int sys_gettimeofday(struct timeval *tv, struct timezone *tz)
+int sys_gettimeofday(struct timeval *tv, struct timezone *tz)/*  */
 {
 	if (tv) {
 		verify_area(tv, sizeof *tv);
@@ -463,7 +466,7 @@ int sys_gettimeofday(struct timeval *tv, struct timezone *tz)
  * soon as possible, so that the clock can be set right.  Otherwise,
  * various programs will get confused when the clock gets warped.
  */
-int sys_settimeofday(struct timeval *tv, struct timezone *tz)
+int sys_settimeofday(struct timeval *tv, struct timezone *tz)/*  */
 {
 	static int	firsttime = 1;
 	void 		adjust_clock();
@@ -507,12 +510,12 @@ int sys_settimeofday(struct timeval *tv, struct timezone *tz)
  * clock at all, but get the time via NTP or timed if you're on a 
  * network....				- TYT, 1/1/92
  */
-void adjust_clock()
+void adjust_clock()/*  */
 {
 	startup_time += sys_tz.tz_minuteswest*60;
 }
 
-int sys_umask(int mask)
+int sys_umask(int mask)/*  */
 {
 	int old = current->umask;
 

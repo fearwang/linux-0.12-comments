@@ -443,6 +443,8 @@ void sched_init(void)/*  */
 	//设置任务0的tss和ldt到gdt
 	set_tss_desc(gdt+FIRST_TSS_ENTRY,&(init_task.task.tss));
 	set_ldt_desc(gdt+FIRST_LDT_ENTRY,&(init_task.task.ldt));
+
+	//设置gdt中剩下来的tss和ldt
 	p = gdt+2+FIRST_TSS_ENTRY;
 	//设置所有任务的task struct和对应的tss和ldt为无效值
 	for(i=1;i<NR_TASKS;i++) {

@@ -14,6 +14,7 @@
 #include <asm/segment.h>
 #include <asm/memory.h>
 
+// ramdisk对应的主设备号
 #define MAJOR_NR 1
 #include "blk.h"
 
@@ -72,28 +73,37 @@ void rd_load(void)
 {
 	struct buffer_head *bh;
 	struct super_block	s;
+	//根文件系统从boot设备的256 块开始的地方
 	int		block = 256;	/* Start at block 256 */
 	int		i = 1;
 	int		nblocks;
 	char		*cp;		/* Move pointer */
-	
+
+	//没有ramdisk 退出
 	if (!rd_length)
 		return;
 	printk("Ram disk: %d bytes, starting at 0x%x\n", rd_length,
 		(int) rd_start);
+	//根设备不是软盘也退出
 	if (MAJOR(ROOT_DEV) != 2)
 		return;
+ 
+	//从跟设备上读取些数据  block+1存储的是超级块
 	bh = breada(ROOT_DEV,block+1,block,block+2,-1);
 	if (!bh) {
 		printk("Disk error while looking for ramdisk!\n");
 		return;
 	}
+	//读取到的时候超级快
 	*((struct d_super_block *) &s) = *((struct d_super_block *) bh->b_data);
 	brelse(bh);
+	//模数不对 退出
 	if (s.s_magic != SUPER_MAGIC)
 		/* No ram disk image present, assume normal floppy boot */
 		return;
+	// 试图将整个根文件系统读到ramdisk
 	nblocks = s.s_nzones << s.s_log_zone_size;
+	//根文件系统大于ramdisk 退出
 	if (nblocks > (rd_length >> BLOCK_SIZE_BITS)) {
 		printk("Ram disk image too big!  (%d blocks, %d avail)\n", 
 			nblocks, rd_length >> BLOCK_SIZE_BITS);
@@ -121,5 +131,5 @@ void rd_load(void)
 		i++;
 	}
 	printk("\010\010\010\010\010done \n");
-	ROOT_DEV=0x0101;
+	ROOT_DEV=0x0101;  //修改根设备号为ramdisk
 }

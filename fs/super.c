@@ -246,25 +246,33 @@ void mount_root(void)
 
 	if (32 != sizeof (struct d_inode))
 		panic("bad i-node size");
+	//file table 清0  整个系统的file table
 	for(i=0;i<NR_FILE;i++)
 		file_table[i].f_count=0;
+	//跟设备是软驱时 要求插入软盘
 	if (MAJOR(ROOT_DEV) == 2) {
 		printk("Insert root floppy and press ENTER");
 		wait_for_keypress();
 	}
+	//清0 所有super block数组项
 	for(p = &super_block[0] ; p < &super_block[NR_SUPER] ; p++) {
 		p->s_dev = 0;
 		p->s_lock = 0;
 		p->s_wait = NULL;
 	}
+	//读取根设备的super block到超级快数组
 	if (!(p=read_super(ROOT_DEV)))
 		panic("Unable to mount root");
+	// 获取root inode
 	if (!(mi=iget(ROOT_DEV,ROOT_INO)))
 		panic("Unable to read root i-node");
 	mi->i_count += 3 ;	/* NOTE! it is logically used 4 times, not 1 */
+	//设置当前文件系统的挂载点和根节点
 	p->s_isup = p->s_imount = mi;
+	//设置0号进程的pwd和root的inode
 	current->pwd = mi;
 	current->root = mi;
+	//下面就是统计下当前文件系统的free block数量
 	free=0;
 	i=p->s_nzones;
 	while (-- i >= 0)

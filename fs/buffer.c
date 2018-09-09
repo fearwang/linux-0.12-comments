@@ -26,7 +26,7 @@
 #include <asm/system.h>
 #include <asm/io.h>
 
-extern int end;
+extern int end; /* 内核代码结束的位置 */
 struct buffer_head * start_buffer = (struct buffer_head *) &end;
 struct buffer_head * hash_table[NR_HASH];
 static struct buffer_head * free_list;
@@ -345,6 +345,7 @@ struct buffer_head * breada(int dev,int first, ...)
 	return (NULL);
 }
 
+//buffer里面除了真正的buffer 1k之外，还有用来管理的buffer head
 void buffer_init(long buffer_end)
 {
 	struct buffer_head * h = start_buffer; /* 内核代码和数据结束的·地址 ?*/

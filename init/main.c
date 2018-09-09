@@ -154,9 +154,11 @@ void main(void)		/* This really IS void, no error here. */
 	else
 		buffer_memory_end = 1*1024*1024; //否则高速缓存地址结束在1M
 	main_memory_start = buffer_memory_end;  //主存开始的地址是高速缓存结束的地址
+	
 #ifdef RAMDISK  //如果配置了ramdisk 则，再从主存中reserve出来一部分，rd_init将reserve的全部清0
 	main_memory_start += rd_init(main_memory_start, RAMDISK*1024);
 #endif
+
 //内存初始化，搞得就是buddy管理的那部分，
 //设置mem_map数组，除了主存区，其他部分全部设置为used
 	mem_init(main_memory_start,memory_end);
@@ -181,7 +183,8 @@ void main(void)		/* This really IS void, no error here. */
 	//软驱初始化和hd一样 设置IO REQUEST的处理函数  设置软驱中断处理
 	floppy_init();/*  */
 	//初始化完成 可以打开中断了，我们已经设置了所有 中断处理函数
-	sti();/*  */
+	sti();/* 打开中断  可以接受中断了 包括时钟中断 */
+
 	//内核堆栈中设置调用栈，然后iret返回到用户态
 	//到目前为止初始化代码使用的都是user_stack数组的栈而不是task struct页中的内核堆栈
 	//这里回到用户态后再回到内核态时就会使用内核态堆栈
@@ -226,7 +229,8 @@ void init(void)
 {
 	int pid,i;
 
-	//待分析，读取硬盘参数，包括分区表信息  系统调用sys_setup
+	//待分析，读取硬盘参数，包括分区表信息  系统调用sys_setup  
+	// 挂载根文件系统
 	setup((void *) &drive_info);
 
 	//打开tty1

@@ -1,12 +1,12 @@
 #define move_to_user_mode() \
-__asm__ ("movl %%esp,%%eax\n\t" \
+__asm__ ("movl %%esp,%%eax\n\t" \  /* 这里初始化堆栈已经使用了 一部分了  回到用户态时这里是否可以直接重新将sp设置为user stack末端 */
 	"pushl $0x17\n\t" \     //ess
 	"pushl %%eax\n\t" \  //esp
 	"pushfl\n\t" \          //eflags
 	"pushl $0x0f\n\t" \   //cs
 	"pushl $1f\n\t" \     //ip
 	"iret\n" \
-	"1:\tmovl $0x17,%%eax\n\t" \   //iret返回到这里
+	"1:\tmovl $0x17,%%eax\n\t" \   //iret返回到这里   获取数据段选择符  并重新加载到ds es等寄存器
 	"mov %%ax,%%ds\n\t" \
 	"mov %%ax,%%es\n\t" \
 	"mov %%ax,%%fs\n\t" \
@@ -62,6 +62,6 @@ __asm__ ("movw $104,%1\n\t" \
 	::"a" (addr), "m" (*(n)), "m" (*(n+2)), "m" (*(n+4)), \
 	 "m" (*(n+5)), "m" (*(n+6)), "m" (*(n+7)) \
 	)
-
+//细节不深究  设置tss和ldt
 #define set_tss_desc(n,addr) _set_tssldt_desc(((char *) (n)),addr,"0x89")
 #define set_ldt_desc(n,addr) _set_tssldt_desc(((char *) (n)),addr,"0x82")

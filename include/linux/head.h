@@ -5,8 +5,8 @@ typedef struct desc_struct {
 	unsigned long a,b;
 } desc_table[256];
 
-extern unsigned long pg_dir[1024];
-extern desc_table idt,gdt;
+extern unsigned long pg_dir[1024]; /* 汇编里面是_pg_dir: */
+extern desc_table idt,gdt;  //汇编里面是_gdt   在c中引用变成gdt
 
 #define GDT_NUL 0
 #define GDT_CODE 1

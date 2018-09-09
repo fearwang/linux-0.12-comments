@@ -50,6 +50,7 @@ struct hd_i_struct {
 struct hd_i_struct hd_info[] = { HD_TYPE };
 #define NR_HD ((sizeof (hd_info))/(sizeof (struct hd_i_struct)))
 #else
+// 没有定义HD TYPE则 先为0 后面setup读取
 struct hd_i_struct hd_info[] = { {0,0,0,0,0,0},{0,0,0,0,0,0} };
 static int NR_HD = 0;
 #endif
@@ -80,11 +81,12 @@ int sys_setup(void * BIOS)
 	struct partition *p;
 	struct buffer_head * bh;
 
+	// 只允许调用一次
 	if (!callable)
 		return -1;
 	callable = 0;
 #ifndef HD_TYPE
-	for (drive=0 ; drive<2 ; drive++) {
+	for (drive=0 ; drive<2 ; drive++) { //读取到hdinfo
 		hd_info[drive].cyl = *(unsigned short *) BIOS;
 		hd_info[drive].head = *(unsigned char *) (2+BIOS);
 		hd_info[drive].wpcom = *(unsigned short *) (5+BIOS);
@@ -93,11 +95,12 @@ int sys_setup(void * BIOS)
 		hd_info[drive].sect = *(unsigned char *) (14+BIOS);
 		BIOS += 16;
 	}
-	if (hd_info[1].cyl)
+	if (hd_info[1].cyl) /* 第二个hdinfo不为0 则说明有两块硬盘 */
 		NR_HD=2;
 	else
 		NR_HD=1;
 #endif
+//这里只设置代表整体硬盘的参数  0和5
 	for (i=0 ; i<NR_HD ; i++) {
 		hd[i*5].start_sect = 0;
 		hd[i*5].nr_sects = hd_info[i].head*
@@ -137,31 +140,43 @@ int sys_setup(void * BIOS)
 		hd[i*5].start_sect = 0;
 		hd[i*5].nr_sects = 0;
 	}
+	// 上面的代码用来检测的 ，，，不管
+
+	//确定了硬盘数量后  开始读每个硬盘的第一个扇区
 	for (drive=0 ; drive<NR_HD ; drive++) {
+		//参数分别是设备号和block的number
 		if (!(bh = bread(0x300 + drive*5,0))) {
 			printk("Unable to read partition table of drive %d\n\r",
 				drive);
 			panic("");
 		}
+		//判断扇区的有效性
 		if (bh->b_data[510] != 0x55 || (unsigned char)
 		    bh->b_data[511] != 0xAA) {
 			printk("Bad partition table on drive %d\n\r",drive);
 			panic("");
 		}
+		// 取出分区表
 		p = 0x1BE + (void *)bh->b_data;
+		// 设置到hd结构体中
 		for (i=1;i<5;i++,p++) {
 			hd[i+5*drive].start_sect = p->start_sect;
 			hd[i+5*drive].nr_sects = p->nr_sects;
 		}
+		//释放buffer head
 		brelse(bh);
 	}
+	//统计每个分区的block  ，这里一个block=1024 2个扇区大小 所以右移2
 	for (i=0 ; i<5*MAX_HD ; i++)
 		hd_sizes[i] = hd[i].nr_sects>>1 ;
 	blk_size[MAJOR_NR] = hd_sizes;
 	if (NR_HD)
 		printk("Partition table%s ok.\n\r",(NR_HD>1)?"s":"");
+	//如果有设置ramdisk 则会将根文件系统加载到ramdisk 
 	rd_load();
+	//初始化swap设备
 	init_swapping();
+	//并挂载
 	mount_root();
 	return (0);
 }

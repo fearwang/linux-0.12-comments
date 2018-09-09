@@ -1,5 +1,2 @@
----- release Matches (4 in 2 files) ----
-Exit.c (kernel):void release(struct task_struct * p)
-Exit.c (kernel):	panic("trying to release non-existent task");
-Exit.c (kernel):				release(p);
-Utsname.h (include\sys):	char release[9];
+---- copy_process Matches (1 in 1 files) ----
+Fork.c (kernel):int copy_process(int nr/* 找到的空闲任务号 */,long ebp,long edi,long esi,long gs,long none,
