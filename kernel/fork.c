@@ -69,6 +69,11 @@ int copy_mem(int nr/* 新任务号 */,struct task_struct * p/* 新任务task struct */)
  */
  
  /* fork的主要逻辑 入参是汇编阶段压入的 */
+/* 从这里看 子进程被调度后 直接从用户态开始运行，data和stack一旦发生写操作就会·发生写时复制
+	但有一点，sp此时已经不是满的了，和父进程一样的状态
+
+	执行exec后应该会被重新置位
+*/
 int copy_process(int nr/* 找到的空闲任务号 */,long ebp,long edi,long esi,long gs,long none,
 		long ebx,long ecx,long edx, long orig_eax, 
 		long fs,long es,long ds,
@@ -97,20 +102,20 @@ int copy_process(int nr/* 找到的空闲任务号 */,long ebp,long edi,long esi,long gs
 	p->tss.back_link = 0;/*  */
 	p->tss.esp0 = PAGE_SIZE + (long) p;/* 内核栈指向task struct所在页顶端 */
 	p->tss.ss0 = 0x10;/* 内核数据段 */
-	
+	/* fork后的子进程，后面如果被调度到，则竟然从用户态开始运行 */
 	p->tss.eip = eip;/* 返回地址和调用fork的父进程是一样的 */
 	p->tss.eflags = eflags;/*  */
 	p->tss.eax = 0;/* 子进程应该返回0 */
 	p->tss.ecx = ecx;/*  */
 	p->tss.edx = edx;
 	p->tss.ebx = ebx;
-	p->tss.esp = esp;
+	p->tss.esp = esp; /* 也是用户态的堆栈指针 */
 	p->tss.ebp = ebp;
 	p->tss.esi = esi;
 	p->tss.edi = edi;
-	p->tss.es = es & 0xffff;/* 段寄存器仅16bit */
-	p->tss.cs = cs & 0xffff;
-	p->tss.ss = ss & 0xffff;
+	p->tss.es = es & 0xffff;/* 段寄存器仅16bit  这里cs只是一个索引*/ 
+	p->tss.cs = cs & 0xffff; /* fork后的子进程，后面如果被调度到，则竟然从用户态开始运行 */
+	p->tss.ss = ss & 0xffff; 
 	p->tss.ds = ds & 0xffff;
 	p->tss.fs = fs & 0xffff;
 	p->tss.gs = gs & 0xffff;
@@ -120,6 +125,7 @@ int copy_process(int nr/* 找到的空闲任务号 */,long ebp,long edi,long esi,long gs
 	if (last_task_used_math == current)/* 协处理器相关 */
 		__asm__("clts ; fnsave %0 ; frstor %0"::"m" (p->tss.i387));
 	/* 下面开始复制进程页表 */
+	//同时这里会设置ldt的base和limit
 	if (copy_mem(nr,p)) {
 		task[nr] = NULL;/* 失败则释放任务数组 */
 		free_page((long) p);/* 释放task struct占用的页 */

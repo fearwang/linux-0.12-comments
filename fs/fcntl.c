@@ -33,12 +33,15 @@ static int dupfd(unsigned int fd, unsigned int arg)
 	return arg;
 }
 
+
+//从指定的newfd开始找进程中空闲的file指针 找到则指向同一个file 结构体
 int sys_dup2(unsigned int oldfd, unsigned int newfd)
 {
 	sys_close(newfd);
 	return dupfd(oldfd,newfd);
 }
 
+//从0开始找 进程中空闲的file指针 找到则指向同一个file 结构体
 int sys_dup(unsigned int fildes)
 {
 	return dupfd(fildes,0);

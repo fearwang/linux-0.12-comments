@@ -229,8 +229,9 @@ void init(void)
 {
 	int pid,i;
 
-	//待分析，读取硬盘参数，包括分区表信息  系统调用sys_setup  
+	// 读取硬盘参数，包括分区表信息  系统调用sys_setup  
 	// 挂载根文件系统
+	// 所谓挂载 就是读进超级块，然后设置一些inode之类的信息，设置根设备号
 	setup((void *) &drive_info);
 
 	//打开tty1
@@ -243,7 +244,7 @@ void init(void)
 		NR_BUFFERS*BLOCK_SIZE);
 	printf("Free mem: %d bytes\n\r",memory_end-main_memory_start);
 	if (!(pid=fork())) {
-		close(0);
+		close(0); /* sys_close */
 		//子进程逻辑
 		//上面close 0，这里打开/etc/rc，因此得到的fd=0
 		if (open("/etc/rc",O_RDONLY,0))

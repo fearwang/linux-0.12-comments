@@ -1,2 +1,5 @@
----- copy_process Matches (1 in 1 files) ----
-Fork.c (kernel):int copy_process(int nr/* 找到的空闲任务号 */,long ebp,long edi,long esi,long gs,long none,
+---- sys_open Matches (4 in 2 files) ----
+Open.c (fs):int sys_open(const char * filename,int flag,int mode)
+Open.c (fs):	return sys_open(pathname, O_CREAT | O_TRUNC, mode);
+Sys.h (include\linux):extern int sys_open();
+Sys.h (include\linux):sys_write, sys_open, sys_close, sys_waitpid, sys_creat, sys_link,
