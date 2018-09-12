@@ -15,6 +15,7 @@
 
 extern int sys_close(int fd);
 
+//返回新复制的fd  即下标
 static int dupfd(unsigned int fd, unsigned int arg)
 {
 	if (fd >= NR_OPEN || !current->filp[fd])

@@ -1,5 +1,4 @@
----- sys_open Matches (4 in 2 files) ----
-Open.c (fs):int sys_open(const char * filename,int flag,int mode)
-Open.c (fs):	return sys_open(pathname, O_CREAT | O_TRUNC, mode);
-Sys.h (include\linux):extern int sys_open();
-Sys.h (include\linux):sys_write, sys_open, sys_close, sys_waitpid, sys_creat, sys_link,
+---- sys_dup Matches (3 in 2 files) ----
+Fcntl.c (fs):int sys_dup(unsigned int fildes)
+Sys.h (include\linux):extern int sys_dup();
+Sys.h (include\linux):sys_rmdir, sys_dup, sys_pipe, sys_times, sys_prof, sys_brk, sys_setgid,

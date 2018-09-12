@@ -236,6 +236,7 @@ void init(void)
 
 	//打开tty1
 	(void) open("/dev/tty1",O_RDWR,0);
+	//复制文件描述符
 	(void) dup(0);
 	(void) dup(0);
 

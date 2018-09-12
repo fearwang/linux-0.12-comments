@@ -245,6 +245,7 @@ repeat:
 	bh->b_uptodate=0;
 	remove_from_queues(bh);
 	bh->b_dev=dev;
+	//»º³å¿é¶ÔÓ¦µÄ´ÅÅÌ¿é
 	bh->b_blocknr=block;
 	insert_into_queues(bh);
 	return bh;

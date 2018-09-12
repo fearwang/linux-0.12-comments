@@ -62,33 +62,40 @@ static int free_dind(int dev,int block)
 		return free_block(dev,block);
 }
 
+//截断文件数据 释放占用设备空间
 void truncate(struct m_inode * inode)
 {
 	int i;
 	int block_busy;
-
+	//不是常规文件 目录文件 和连接文件 则返回
 	if (!(S_ISREG(inode->i_mode) || S_ISDIR(inode->i_mode) ||
 	     S_ISLNK(inode->i_mode)))
 		return;
 repeat:
 	block_busy = 0;
 	for (i=0;i<7;i++)
+		//释放直接块
 		if (inode->i_zone[i]) {
 			if (free_block(inode->i_dev,inode->i_zone[i]))
 				inode->i_zone[i]=0;
 			else
+				//没有成功释放 则 置busy
 				block_busy = 1;
 		}
+		//释放一级块
 	if (free_ind(inode->i_dev,inode->i_zone[7]))
 		inode->i_zone[7] = 0;
 	else
 		block_busy = 1;
+	//释放二级块
 	if (free_dind(inode->i_dev,inode->i_zone[8]))
 		inode->i_zone[8] = 0;
 	else
 		block_busy = 1;
+	//设置inode dirty=1
 	inode->i_dirt = 1;
 	if (block_busy) {
+		//如果还有块由于忙 没有释放 则切换进程 回来重试
 		current->counter = 0;
 		schedule();
 		goto repeat;
