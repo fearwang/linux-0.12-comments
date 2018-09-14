@@ -13,6 +13,7 @@
 #include <asm/segment.h>
 #include <asm/io.h>
 
+//ÖÕ¶ËÏà¹Ø Ìø¹ı
 extern int tty_read(unsigned minor,char * buf,int count);
 extern int tty_write(unsigned minor,char * buf,int count);
 

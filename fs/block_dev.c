@@ -13,6 +13,10 @@
 
 extern int *blk_size[];
 
+//此文件是越过文件系统 直接操作块设备
+
+//向指定设备  指定的偏移处 写入指定长度的数据  源是buffer
+//这里写 也只是写到高速缓冲
 int block_write(int dev, long * pos, char * buf, int count)
 {
 	int block = *pos >> BLOCK_SIZE_BITS;
@@ -33,6 +37,7 @@ int block_write(int dev, long * pos, char * buf, int count)
 		chars = BLOCK_SIZE - offset;
 		if (chars > count)
 			chars=count;
+		//获取到对应的buffer
 		if (chars == BLOCK_SIZE)
 			bh = getblk(dev,block);
 		else
@@ -40,6 +45,7 @@ int block_write(int dev, long * pos, char * buf, int count)
 		block++;
 		if (!bh)
 			return written?written:-EIO;
+		//开始写到buffer
 		p = offset + bh->b_data;
 		offset = 0;
 		*pos += chars;
@@ -53,6 +59,7 @@ int block_write(int dev, long * pos, char * buf, int count)
 	return written;
 }
 
+//从指定设备 指定位置 读指定长度的内容到buf
 int block_read(int dev, unsigned long * pos, char * buf, int count)
 {
 	int block = *pos >> BLOCK_SIZE_BITS;
@@ -82,6 +89,7 @@ int block_read(int dev, unsigned long * pos, char * buf, int count)
 		read += chars;
 		count -= chars;
 		while (chars-->0)
+			//直接读到了用户空间
 			put_fs_byte(*(p++),buf++);
 		brelse(bh);
 	}

@@ -1,4 +1,7 @@
----- sys_dup Matches (3 in 2 files) ----
-Fcntl.c (fs):int sys_dup(unsigned int fildes)
-Sys.h (include\linux):extern int sys_dup();
-Sys.h (include\linux):sys_rmdir, sys_dup, sys_pipe, sys_times, sys_prof, sys_brk, sys_setgid,
+---- s_imap_blocks Matches (6 in 3 files) ----
+Fs.h (include\linux):	unsigned short s_imap_blocks;
+Fs.h (include\linux):	unsigned short s_imap_blocks;
+Inode.c (fs):	block = 2 + sb->s_imap_blocks + sb->s_zmap_blocks +
+Inode.c (fs):	block = 2 + sb->s_imap_blocks + sb->s_zmap_blocks +
+Super.c (fs):	for (i=0 ; i < s->s_imap_blocks ; i++)
+Super.c (fs):	if (block != 2+s->s_imap_blocks+s->s_zmap_blocks) {

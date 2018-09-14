@@ -73,6 +73,7 @@ int write_pipe(struct m_inode * inode, char * buf, int count)
 	return written;
 }
 
+//创建管道
 int sys_pipe(unsigned long * fildes)
 {
 	struct m_inode * inode;
@@ -119,6 +120,7 @@ int pipe_ioctl(struct m_inode *pino, int cmd, int arg)
 {
 	switch (cmd) {
 		case FIONREAD:
+			//获取管道中可读数据长度
 			verify_area((void *) arg,4);
 			put_fs_long(PIPE_SIZE(*pino),(unsigned long *) arg);
 			return 0;
