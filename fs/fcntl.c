@@ -55,19 +55,24 @@ int sys_fcntl(unsigned int fd, unsigned int cmd, unsigned long arg)
 	if (fd >= NR_OPEN || !(filp = current->filp[fd]))
 		return -EBADF;
 	switch (cmd) {
+		//复制文件fd
 		case F_DUPFD:
 			return dupfd(fd,arg);
 		case F_GETFD:
+			//取文件的close on exec标志
 			return (current->close_on_exec>>fd)&1;
 		case F_SETFD:
+			//设置或clear close on exec 标志
 			if (arg&1)
 				current->close_on_exec |= (1<<fd);
 			else
 				current->close_on_exec &= ~(1<<fd);
 			return 0;
 		case F_GETFL:
+			//获取flag
 			return filp->f_flags;
 		case F_SETFL:
+			//set flag
 			filp->f_flags &= ~(O_APPEND | O_NONBLOCK);
 			filp->f_flags |= arg & (O_APPEND | O_NONBLOCK);
 			return 0;

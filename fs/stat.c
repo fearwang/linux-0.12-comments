@@ -12,6 +12,8 @@
 #include <linux/kernel.h>
 #include <asm/segment.h>
 
+//取文件信息 并cp到用户空间
+
 static void cp_stat(struct m_inode * inode, struct stat * statbuf)
 {
 	struct stat tmp;

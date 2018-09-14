@@ -1,7 +1,3 @@
----- s_imap_blocks Matches (6 in 3 files) ----
-Fs.h (include\linux):	unsigned short s_imap_blocks;
-Fs.h (include\linux):	unsigned short s_imap_blocks;
-Inode.c (fs):	block = 2 + sb->s_imap_blocks + sb->s_zmap_blocks +
-Inode.c (fs):	block = 2 + sb->s_imap_blocks + sb->s_zmap_blocks +
-Super.c (fs):	for (i=0 ; i < s->s_imap_blocks ; i++)
-Super.c (fs):	if (block != 2+s->s_imap_blocks+s->s_zmap_blocks) {
+---- do_timer Matches (2 in 2 files) ----
+Sched.c (kernel):void do_timer(long cpl)
+Sys_call.s (kernel):	call _do_timer		# 'do_timer(long CPL)' does everything from

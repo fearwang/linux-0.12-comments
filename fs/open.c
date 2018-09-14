@@ -143,6 +143,7 @@ int sys_chown(const char * filename,int uid,int gid)
 	return 0;
 }
 
+//检查字符设备  tty相关 跳过
 static int check_char_dev(struct m_inode * inode, int dev, int flag)
 {
 	struct tty_struct *tty;
