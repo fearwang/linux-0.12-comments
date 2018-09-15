@@ -75,6 +75,7 @@ static inline void unlock_buffer(struct buffer_head * bh)
  * Note that swapping requests always go before other requests,
  * and are done in the order they appear.
  */
+ //向链表中添加一个request项
 static void add_request(struct blk_dev_struct * dev, struct request * req)
 {
 	struct request * tmp;
@@ -83,12 +84,16 @@ static void add_request(struct blk_dev_struct * dev, struct request * req)
 	cli();
 	if (req->bh)
 		req->bh->b_dirt = 0;
+	//看当前设备是否还有没有处理的request
 	if (!(tmp = dev->current_request)) {
+		//如果没有  则当前add的是唯一一个
 		dev->current_request = req;
 		sti();
+		//可以立即执行这个request  fn一旦执行 应该会一直处理 找到队列为空
 		(dev->request_fn)();
 		return;
 	}
+	//否则的话插入到合适的位置 所谓电梯算法
 	for ( ; tmp->next ; tmp=tmp->next) {
 		if (!req->bh)
 			if (tmp->next->bh)
@@ -100,6 +105,7 @@ static void add_request(struct blk_dev_struct * dev, struct request * req)
 		    IN_ORDER(req,tmp->next))
 			break;
 	}
+	//插入链表
 	req->next=tmp->next;
 	tmp->next=req;
 	sti();
@@ -113,7 +119,9 @@ static void make_request(int major,int rw, struct buffer_head * bh)
 /* WRITEA/READA is special case - it is not really needed, so if the */
 /* buffer is locked, we just forget about it, else it's a normal read */
 	if (rw_ahead = (rw == READA || rw == WRITEA)) {
+		//预读
 		if (bh->b_lock)
+			//buffer上锁 返回 无法修改buffer
 			return;
 		if (rw == READA)
 			rw = READ;
@@ -121,8 +129,11 @@ static void make_request(int major,int rw, struct buffer_head * bh)
 			rw = WRITE;
 	}
 	if (rw!=READ && rw!=WRITE)
+		//非读 即写
 		panic("Bad block dev command, must be R/W/RA/WA");
+	//操作buffer前 要lockbuffer
 	lock_buffer(bh);
+	//对写干净的buffer 或者 读 已经 有效的 buffer 是多余的
 	if ((rw == WRITE && !bh->b_dirt) || (rw == READ && bh->b_uptodate)) {
 		unlock_buffer(bh);
 		return;
@@ -132,33 +143,42 @@ repeat:
  * we want some room for reads: they take precedence. The last third
  * of the requests are only for reads.
  */
+ //读写request 比重?
 	if (rw == READ)
 		req = request+NR_REQUEST;
 	else
 		req = request+((NR_REQUEST*2)/3);
 /* find an empty request */
+//找一个空闲的 request 数组项
 	while (--req >= request)
 		if (req->dev<0)
 			break;
 /* if none found, sleep on new requests: check for rw_ahead */
+//没找到 
 	if (req < request) {
+		//如果是预读 我们直接返回
 		if (rw_ahead) {
 			unlock_buffer(bh);
 			return;
 		}
+		//否则不是预读  等待空闲的request数组项
 		sleep_on(&wait_for_request);
 		goto repeat;
 	}
 /* fill up the request-info, and add it to the queue */
+//走到这里 我们已经得到了一个request数组项
 	req->dev = bh->b_dev;
 	req->cmd = rw;
 	req->errors=0;
+	//块号 转换成扇区号
 	req->sector = bh->b_blocknr<<1;
+	//一块等于2 扇区
 	req->nr_sectors = 2;
 	req->buffer = bh->b_data;
 	req->waiting = NULL;
 	req->bh = bh;
 	req->next = NULL;
+	//添加request
 	add_request(major+blk_dev,req);
 }
 
@@ -197,19 +217,23 @@ repeat:
 	schedule();
 }	
 
+//如果是读 则是我们返回buffer给调用者
 void ll_rw_block(int rw, struct buffer_head * bh)
 {
 	unsigned int major;
 
+	//不能超过最大的主设备号  对应设备的request fn不能为空
 	if ((major=MAJOR(bh->b_dev)) >= NR_BLK_DEV ||
 	!(blk_dev[major].request_fn)) {
 		printk("Trying to read nonexistent block-device\n\r");
 		return;
 	}
+	//触发一个request
 	make_request(major,rw,bh);
 }
 
 //块设备初始化，IO请求数组初始化
+//之后对应种类的块设备 初始化时会设置request fn
 void blk_dev_init(void)
 {
 	int i;

@@ -47,8 +47,11 @@ struct blk_dev_struct {
 	struct request * current_request;
 };
 
+//每种块设备都会有个blk_dev_struct  
 extern struct blk_dev_struct blk_dev[NR_BLK_DEV];
+//request 数组 
 extern struct request request[NR_REQUEST];
+//请求空闲request项的等待队列
 extern struct task_struct * wait_for_request;
 
 extern int * blk_size[NR_BLK_DEV];
@@ -130,6 +133,7 @@ extern inline void end_request(int uptodate)
 	wake_up(&CURRENT->waiting);
 	wake_up(&wait_for_request);
 	CURRENT->dev = -1;
+	//头部指向下一个request
 	CURRENT = CURRENT->next;
 }
 

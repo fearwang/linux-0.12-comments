@@ -27,12 +27,15 @@ void do_rd_request(void)
 	char	*addr;
 
 	INIT_REQUEST;
+	//起始地址 和 长度 转换为字节
 	addr = rd_start + (CURRENT->sector << 9);
 	len = CURRENT->nr_sectors << 9;
+	//结束地址不能超过ramdisk 末端
 	if ((MINOR(CURRENT->dev) != 1) || (addr+len > rd_start+rd_length)) {
 		end_request(0);
 		goto repeat;
 	}
+	//读写处理
 	if (CURRENT-> cmd == WRITE) {
 		(void ) memcpy(addr,
 			      CURRENT->buffer,
@@ -44,7 +47,7 @@ void do_rd_request(void)
 	} else
 		panic("unknown ramdisk-command");
 	end_request(1);
-	goto repeat;
+	goto repeat;//会循环处理
 }
 
 /*

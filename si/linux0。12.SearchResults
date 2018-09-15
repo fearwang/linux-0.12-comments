@@ -1,3 +1,8 @@
----- do_timer Matches (2 in 2 files) ----
-Sched.c (kernel):void do_timer(long cpl)
-Sys_call.s (kernel):	call _do_timer		# 'do_timer(long CPL)' does everything from
+---- waiting Matches (7 in 3 files) ----
+Blk.h (kernel\blk_drv): * paging, 'bh' is NULL, and 'waiting' is used to wait for
+Blk.h (kernel\blk_drv):	struct task_struct * waiting;
+Blk.h (kernel\blk_drv):	wake_up(&CURRENT->waiting);
+Buffer.c (fs):/* NOTE!! While we slept waiting for this block, somebody else might */
+Buffer.c (fs): * all at the same time, not waiting for one to be read, and then another
+Ll_rw_blk.c (kernel\blk_drv):	req->waiting = NULL;
+Ll_rw_blk.c (kernel\blk_drv):	req->waiting = current;
